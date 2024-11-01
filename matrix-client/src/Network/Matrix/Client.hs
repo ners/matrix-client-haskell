@@ -28,6 +28,11 @@ module Network.Matrix.Client
     login,
     loginToken,
     logout,
+    MRoomEncryptedPayload(..),
+    MRoomEncrypted(..),
+    ToDeviceContent(..),
+    ToDeviceEvents(..),
+    ToDeviceEvent(..),
 
     -- * API
     MatrixM,
@@ -1087,9 +1092,76 @@ instance FromJSON Presence where
     (String "unavailable") -> pure Unavailable
     _ -> mzero
 
+data MRoomEncryptedPayload = MRoomEncryptedPayload
+    { mrepType :: Int
+    , mrepBody :: T.Text
+    }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON MRoomEncryptedPayload where
+    parseJSON = genericParseJSON aesonOptions
+
+instance ToJSON MRoomEncryptedPayload where
+    toJSON = genericToJSON aesonOptions
+
+data MRoomEncrypted = MRoomEncrypted
+    { mreAlgorithm :: T.Text
+    , mreSenderKey :: T.Text
+    , mreCiphertext :: Map T.Text MRoomEncryptedPayload
+    }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON MRoomEncrypted where
+  parseJSON = genericParseJSON aesonOptions
+
+instance ToJSON MRoomEncrypted where
+  toJSON = genericToJSON aesonOptions
+
+data ToDeviceContent
+   = TdMRoomEncrypted MRoomEncrypted
+   | TdOther Value
+  deriving (Show, Eq, Generic)
+
+instance ToJSON ToDeviceContent where
+  toJSON (TdMRoomEncrypted mre) = toJSON mre
+  toJSON (TdOther val) = val
+
+data ToDeviceEvent = ToDeviceEvent
+  { tdeContent :: ToDeviceContent
+  , tdeSender :: UserID
+  , tdeEventType :: T.Text
+  }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON ToDeviceEvent where
+  parseJSON = withObject "ToDeviceEvent" $ \o -> do
+    tdeContent' <- o .: "content"
+    tdeSender <- fmap UserID $ o .: "sender"
+    tdeEventType <- o .: "type"
+    tdeContent <-
+         case tdeEventType of
+            "m.room.encrypted" -> TdMRoomEncrypted <$> parseJSON tdeContent'
+            _ -> pure $ TdOther $ Object o
+    pure $ ToDeviceEvent {..}
+
+instance ToJSON ToDeviceEvent where
+  toJSON ToDeviceEvent{tdeSender = UserID tdeSender, ..} = object ["content" .= toJSON tdeContent, "sender" .= toJSON tdeSender, "type" .= toJSON tdeEventType]
+
+newtype ToDeviceEvents = ToDeviceEvents
+    { tdeEvents :: [ToDeviceEvent]
+    }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON ToDeviceEvents where
+  parseJSON = genericParseJSON aesonOptions
+
+instance ToJSON ToDeviceEvents where
+  toJSON = genericToJSON aesonOptions
+
 data SyncResult = SyncResult
   { srNextBatch :: T.Text,
-    srRooms :: Maybe SyncResultRoom
+    srRooms :: Maybe SyncResultRoom,
+    srToDevice :: Maybe ToDeviceEvents
   }
   deriving (Show, Eq, Generic)
 
@@ -1190,7 +1262,7 @@ mkReply room re mt =
 
 sync :: ClientSession -> Maybe FilterID -> Maybe T.Text -> Maybe Presence -> Maybe Int -> MatrixIO SyncResult
 sync session filterM sinceM presenceM timeoutM = do
-  request <- mkRequest session True "/_matrix/client/r0/sync"
+  request <- mkRequest session True "/_matrix/client/v3/sync"
   doRequest session (HTTP.setQueryString qs request)
   where
     toQs name = \case

@@ -5,6 +5,7 @@
 - Expose mkRequest and doRequest
 - Rename DeviceId to DeviceID
 - Return DeviceID out of getTokenOwner
+- Add to_device to SyncResult
 
 ## 0.1.5.0
 
