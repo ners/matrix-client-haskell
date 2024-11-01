@@ -30,7 +30,7 @@ import System.IO (stderr)
 
 newtype MatrixToken = MatrixToken Text
 newtype Username = Username { username :: Text }
-newtype DeviceId = DeviceId { deviceId :: Text }
+newtype DeviceID = DeviceID { deviceId :: Text }
 newtype InitialDeviceDisplayName = InitialDeviceDisplayName { initialDeviceDisplayName :: Text} 
 data LoginSecret = Password Text | Token Text
 
@@ -98,7 +98,7 @@ mkRequest' baseUrl (MatrixToken token) auth path = do
     authHeaders =
       [("Authorization", "Bearer " <> encodeUtf8 token) | auth]
 
-mkLoginRequest' :: Text -> Maybe DeviceId -> Maybe InitialDeviceDisplayName -> Username -> LoginSecret -> IO HTTP.Request
+mkLoginRequest' :: Text -> Maybe DeviceID -> Maybe InitialDeviceDisplayName -> Username -> LoginSecret -> IO HTTP.Request
 mkLoginRequest' baseUrl did idn (Username name) secret' = do
   let path = "/_matrix/client/r0/login"
   initRequest <- HTTP.parseUrlThrow (unpack $ baseUrl <> path)

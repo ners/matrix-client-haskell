@@ -17,7 +17,7 @@ module Network.Matrix.Client
     LoginCredentials (..),
     MatrixToken (..),
     Username (..),
-    DeviceId (..),
+    DeviceID (..),
     InitialDeviceDisplayName (..),
     LoginSecret (..),
     LoginResponse (..),
@@ -173,7 +173,7 @@ data LoginCredentials = LoginCredentials
   { lUsername :: Username
   , lLoginSecret :: LoginSecret
   , lBaseUrl :: T.Text
-  , lDeviceId :: Maybe DeviceId
+  , lDeviceId :: Maybe DeviceID
   , lInitialDeviceDisplayName :: Maybe InitialDeviceDisplayName
   }
 
