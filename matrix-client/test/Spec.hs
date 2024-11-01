@@ -66,7 +66,7 @@ integration sess1 sess2 = do
 
     it "invite private room" $ do
       Right room <- createRoom sess1 $ RoomCreateRequest PrivateChat "private" "private-test" "A test"
-      Right user <- getTokenOwner sess2
+      Right (user, _) <- getTokenOwner sess2
       Right inviteResult <- inviteToRoom sess1 room user (Just "Welcome!")
       inviteResult `shouldBe` ()
 

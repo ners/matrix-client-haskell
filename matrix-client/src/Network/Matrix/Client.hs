@@ -23,6 +23,8 @@ module Network.Matrix.Client
     LoginResponse (..),
     getTokenFromEnv,
     createSession,
+    mkRequest,
+    doRequest,
     login,
     loginToken,
     logout,
@@ -237,9 +239,12 @@ doRequestExpectEmptyResponse sess apiName request = fmap ensureEmptyObject <$> d
       _ -> error $ "Unknown " <> apiName <> " response: " <> show value
 
 -- | 'getTokenOwner' gets information about the owner of a given access token.
-getTokenOwner :: ClientSession -> MatrixIO UserID
-getTokenOwner session =
-  doRequest session =<< mkRequest session True "/_matrix/client/r0/account/whoami"
+getTokenOwner :: ClientSession -> MatrixIO (UserID, DeviceID)
+getTokenOwner session = do
+  resp <- doRequest session =<< mkRequest session True "/_matrix/client/v3/account/whoami"
+  case resp of
+    Left err -> pure $ Left err
+    Right WhoamiResponse {..} -> pure $ Right (UserID wrUserId, DeviceID wrDeviceId)
 
 -- | A workaround data type to handle room create error being reported with a {message: "error"} response
 data CreateRoomResponse = CreateRoomResponse

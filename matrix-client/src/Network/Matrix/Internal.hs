@@ -49,6 +49,19 @@ instance FromJSON LoginResponse where
     deviceId' <- v .: "device_id"
     pure $ LoginResponse userId' accessToken' homeServer' deviceId'
 
+data WhoamiResponse = WhoamiResponse
+  { wrUserId :: Text
+  , wrDeviceId :: Text
+  , wrIsGuest :: Bool
+  }
+
+instance FromJSON WhoamiResponse where
+  parseJSON = withObject "WhoamiResponse" $ \v -> do
+    userId' <- v .: "user_id"
+    deviceId' <- v .: "device_id"
+    isGuest' <- v .: "is_guest"
+    pure $ WhoamiResponse userId' deviceId' isGuest'
+
 getTokenFromEnv ::
   -- | The envirnoment variable name
   Text ->
