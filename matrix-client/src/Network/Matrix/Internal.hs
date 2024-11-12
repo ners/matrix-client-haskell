@@ -14,7 +14,7 @@ import Control.Monad.Catch (Handler (Handler), MonadMask)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Retry (RetryStatus (..))
 import qualified Control.Retry as Retry
-import Data.Aeson (FromJSON (..), FromJSONKey (..), Value (Object), encode, eitherDecode, object, withObject, (.:), (.:?), (.=))
+import Data.Aeson (FromJSON (..), FromJSONKey (..), ToJSON (..), ToJSONKey (..), Value (Object), encode, eitherDecode, object, withObject, (.:), (.:?), (.=))
 import Data.ByteString.Lazy (ByteString, toStrict)
 import Data.Hashable (Hashable)
 import Data.Maybe (catMaybes, fromMaybe)
@@ -31,6 +31,7 @@ import System.IO (stderr)
 newtype MatrixToken = MatrixToken Text
 newtype Username = Username { username :: Text }
 newtype DeviceID = DeviceID { deviceId :: Text }
+  deriving (Show, Eq, Ord, Hashable, FromJSONKey, ToJSONKey, FromJSON, ToJSON)
 newtype InitialDeviceDisplayName = InitialDeviceDisplayName { initialDeviceDisplayName :: Text} 
 data LoginSecret = Password Text | Token Text
 
@@ -141,7 +142,7 @@ decodeResp resp = case eitherDecode resp of
     Left _ -> Left e
 
 newtype UserID = UserID Text
-  deriving (Show, Eq, Ord, Hashable, FromJSONKey)
+  deriving (Show, Eq, Ord, Hashable, FromJSONKey, ToJSONKey)
 
 instance FromJSON UserID where
   parseJSON (Object v) = UserID <$> v .: "user_id"

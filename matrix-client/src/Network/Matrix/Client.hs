@@ -156,6 +156,7 @@ import Data.Maybe (fromMaybe, catMaybes)
 import Data.Proxy (Proxy(Proxy))
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Debug.Trace
 import GHC.Generics
 import qualified Network.HTTP.Client as HTTP
 import Network.HTTP.Types.URI (urlEncode)
@@ -1158,10 +1159,23 @@ instance FromJSON ToDeviceEvents where
 instance ToJSON ToDeviceEvents where
   toJSON = genericToJSON aesonOptions
 
+data DeviceLists = DeviceLists
+    { dlChanged :: Maybe [T.Text]
+    , dlLeft :: Maybe [T.Text]
+    }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON DeviceLists where
+  parseJSON = genericParseJSON aesonOptions
+
+instance ToJSON DeviceLists where
+  toJSON = genericToJSON aesonOptions
+
 data SyncResult = SyncResult
   { srNextBatch :: T.Text,
     srRooms :: Maybe SyncResultRoom,
-    srToDevice :: Maybe ToDeviceEvents
+    srToDevice :: Maybe ToDeviceEvents,
+    srDeviceLists :: Maybe DeviceLists
   }
   deriving (Show, Eq, Generic)
 
@@ -1257,6 +1271,7 @@ mkReply room re mt =
         EventRoomMessage (RoomMessageText oldMT) -> updateText oldMT
         EventRoomReply _ (RoomMessageText oldMT) -> updateText oldMT
         EventRoomEdit _ (RoomMessageText oldMT) -> updateText oldMT
+        EventRoomMember x ->  error $ "Can't reply to " <> show x
         EventUnknown x -> error $ "Can't reply to " <> show x
    in EventRoomReply eventID (RoomMessageText newMessage)
 
